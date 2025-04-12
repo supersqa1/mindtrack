@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Tasks - Mindtrack{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>{{ project.name }}</h2>
+                <a href="{{ url_for('my_projects') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Projects
+                </a>
+            </div>
+            
+            <p class="text-muted mb-4">{{ project.description }}</p>
+            
+            {% if tasks %}
+                <div class="list-group">
+                    {% for task in tasks %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="task{{ task.id }}" 
+                                           {% if task.is_done %}checked{% endif %}
+                                           onchange="toggleTaskStatus({{ task.id }})">
+                                    <label class="form-check-label" for="task{{ task.id }}">
+                                        <h5 class="mb-1">{{ task.title }}</h5>
+                                    </label>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="showFeedbackForm({{ task.id }})">
+                                    Add Feedback
+                                </button>
+                            </div>
+                            {% if task.description %}
+                                <p class="mb-1 mt-2">{{ task.description }}</p>
+                            {% endif %}
+                            {% if task.feedback %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Your feedback:</small>
+                                    <p class="mb-0">{{ task.feedback }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No tasks available for this project yet.
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Project Progress</h5>
+                </div>
+                <div class="card-body">
+                    {% if tasks %}
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ (completed_tasks / total_tasks * 100)|round }}%">
+                                {{ (completed_tasks / total_tasks * 100)|round }}%
+                            </div>
+                        </div>
+                        <p class="mb-0">
+                            {{ completed_tasks }} of {{ total_tasks }} tasks completed
+                        </p>
+                    {% else %}
+                        <p class="text-muted mb-0">No tasks to track progress yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Feedback</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <input type="hidden" id="taskId">
+                    <div class="mb-3">
+                        <label for="feedbackContent" class="form-label">Your Feedback</label>
+                        <textarea class="form-control" id="feedbackContent" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleTaskStatus(taskId) {
+    fetch(`/api/tasks/${taskId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'X-API-Key': '{{ session.api_key }}'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to update task status');
+        }
+        window.location.reload();
+    })
+    .catch(error => {
+        alert(error.message);
+    });
+}
+
+function showFeedbackForm(taskId) {
+    document.getElementById('taskId').value = taskId;
+    const modal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    modal.show();
+}
+
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const taskId = document.getElementById('taskId').value;
+    const content = document.getElementById('feedbackContent').value;
+    
+    fetch(`/api/tasks/${taskId}/feedback`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': '{{ session.api_key }}'
+        },
+        body: JSON.stringify({ content })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to submit feedback');
+        }
+        window.location.reload();
+    })
+    .catch(error => {
+        alert(error.message);
+    });
+});
+</script>
+{% endblock %} 

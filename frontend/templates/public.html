@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Public Projects - Mindtrack{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Public Projects</h2>
+            <p class="text-muted">Explore and learn from these sample projects</p>
+            
+            {% if projects %}
+                <div class="list-group">
+                    {% for project in projects %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-1">{{ project.name }}</h5>
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="showProjectTasks({{ project.id }})">
+                                    View Tasks
+                                </button>
+                            </div>
+                            <p class="mb-1">{{ project.description }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No public projects available at the moment.
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">About Public Projects</h5>
+                </div>
+                <div class="card-body">
+                    <p>These are sample projects designed to help you learn and practice. Each project contains a set of tasks that guide you through different concepts and skills.</p>
+                    <p>To start tracking your own progress and get access to more features, <a href="{{ url_for('register') }}">create an account</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Modal -->
+<div class="modal fade" id="tasksModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Project Tasks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tasksList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showProjectTasks(projectId) {
+    fetch(`/api/public/projects/${projectId}/tasks`)
+        .then(response => response.json())
+        .then(tasks => {
+            const tasksList = document.getElementById('tasksList');
+            tasksList.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<p class="text-muted">No tasks available for this project.</p>';
+                return;
+            }
+            
+            const listGroup = document.createElement('div');
+            listGroup.className = 'list-group';
+            
+            tasks.forEach(task => {
+                const item = document.createElement('div');
+                item.className = 'list-group-item';
+                item.innerHTML = `
+                    <h6 class="mb-1">${task.title}</h6>
+                    ${task.description ? `<p class="mb-1">${task.description}</p>` : ''}
+                `;
+                listGroup.appendChild(item);
+            });
+            
+            tasksList.appendChild(listGroup);
+            
+            const modal = new bootstrap.Modal(document.getElementById('tasksModal'));
+            modal.show();
+        })
+        .catch(error => {
+            alert('Failed to load tasks');
+        });
+}
+</script>
+{% endblock %} 

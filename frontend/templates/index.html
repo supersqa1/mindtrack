@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Mindtrack{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to Mindtrack</h1>
+    <p class="lead">Track your learning progress with our simple and effective tool.</p>
+    <hr class="my-4">
+    <p>Get started by exploring our demo or creating an account.</p>
+    <div class="mt-4">
+        <a class="btn btn-primary btn-lg" href="{{ url_for('demo') }}" role="button">View Demo</a>
+        <a class="btn btn-outline-primary btn-lg ms-2" href="{{ url_for('register') }}" role="button">Register</a>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Track Progress</h5>
+                <p class="card-text">Keep track of your learning journey with our simple task management system.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Get Feedback</h5>
+                <p class="card-text">Submit questions and get feedback on your learning progress.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">API Access</h5>
+                <p class="card-text">Access your data through our simple REST API.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}API Demo - Mindtrack{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>API Demo & Experimentation</h2>
+            <p class="text-muted">Try out the API with these sample endpoints</p>
+            
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Create Test Task</h5>
+                </div>
+                <div class="card-body">
+                    <form id="createTaskForm">
+                        <div class="mb-3">
+                            <label for="taskTitle" class="form-label">Task Title</label>
+                            <input type="text" class="form-control" id="taskTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="taskDescription" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Test Task</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Sample Projects & Tasks</h5>
+                </div>
+                <div class="card-body">
+                    {% if projects %}
+                        <div class="list-group">
+                            {% for project in projects %}
+                                <div class="list-group-item">
+                                    <h5 class="mb-1">{{ project.name }}</h5>
+                                    <p class="mb-1">{{ project.description }}</p>
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            onclick="showProjectTasks({{ project.id }})">
+                                        View Tasks
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No sample projects available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">API Documentation</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Demo Endpoints</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <code>GET /api/demo/projects</code>
+                            <p class="text-muted mb-0">List sample projects</p>
+                        </li>
+                        <li class="mb-2">
+                            <code>GET /api/demo/tasks</code>
+                            <p class="text-muted mb-0">List sample tasks</p>
+                        </li>
+                        <li class="mb-2">
+                            <code>POST /api/demo/tasks</code>
+                            <p class="text-muted mb-0">Create a test task</p>
+                        </li>
+                    </ul>
+                    <div class="alert alert-info">
+                        <small>
+                            Demo tasks are automatically cleaned up after 24 hours.
+                            No authentication required for demo endpoints.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Modal -->
+<div class="modal fade" id="tasksModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Project Tasks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tasksList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('createTaskForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const title = document.getElementById('taskTitle').value;
+    const description = document.getElementById('taskDescription').value;
+    
+    try {
+        const response = await fetch('/api/demo/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title,
+                description
+            })
+        });
+        
+        if (response.ok) {
+            alert('Test task created successfully!');
+            document.getElementById('createTaskForm').reset();
+        } else {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create task');
+        }
+    } catch (error) {
+        alert(error.message);
+    }
+});
+
+function showProjectTasks(projectId) {
+    fetch(`/api/demo/projects/${projectId}/tasks`)
+        .then(response => response.json())
+        .then(tasks => {
+            const tasksList = document.getElementById('tasksList');
+            tasksList.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<p class="text-muted">No tasks available for this project.</p>';
+                return;
+            }
+            
+            const listGroup = document.createElement('div');
+            listGroup.className = 'list-group';
+            
+            tasks.forEach(task => {
+                const item = document.createElement('div');
+                item.className = 'list-group-item';
+                item.innerHTML = `
+                    <h6 class="mb-1">${task.title}</h6>
+                    ${task.description ? `<p class="mb-1">${task.description}</p>` : ''}
+                `;
+                listGroup.appendChild(item);
+            });
+            
+            tasksList.appendChild(listGroup);
+            
+            const modal = new bootstrap.Modal(document.getElementById('tasksModal'));
+            modal.show();
+        })
+        .catch(error => {
+            alert('Failed to load tasks');
+        });
+}
+</script>
+{% endblock %} 
